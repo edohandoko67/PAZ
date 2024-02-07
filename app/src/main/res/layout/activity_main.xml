@@ -94,6 +94,11 @@
             <ImageView
                 android:layout_width="350dp"
                 android:layout_height="145dp"
+                android:src="@drawable/home" />
+
+            <ImageView
+                android:layout_width="350dp"
+                android:layout_height="145dp"
                 android:src="@drawable/skripsi" />
 
         </ViewFlipper>
