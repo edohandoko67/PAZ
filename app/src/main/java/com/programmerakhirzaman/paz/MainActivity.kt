@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.programmerakhirzaman.paz.activity.WebActivity
+import com.programmerakhirzaman.paz.activity.WebView
 import com.programmerakhirzaman.paz.databinding.ActivityMainBinding
 import java.net.URLEncoder
 
@@ -31,7 +32,11 @@ class MainActivity : AppCompatActivity() {
             sendToWa()
         }
 
+        binding.privy.setOnClickListener {
+            startActivity(Intent(this, WebView::class.java))
+        }
     }
+
 
     private fun sendToWa() {
         val message = "Hai kak, berikut pesan langsung dari Website PAZ. Saya mau konsultasi kak"
