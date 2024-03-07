@@ -3,6 +3,7 @@ package com.programmerakhirzaman.paz
 import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,21 +11,28 @@ import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.IBinder
+import android.os.PowerManager
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.programmerakhirzaman.paz.activity.WebActivity
 import com.programmerakhirzaman.paz.activity.WebView
 import com.programmerakhirzaman.paz.databinding.ActivityMainBinding
+import com.programmerakhirzaman.paz.location.DefaultLocationClient
+import com.programmerakhirzaman.paz.location.LocationClient
 import java.net.URLEncoder
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val whatappUser = "+6289523526520"
+
+    val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+    val wL = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "myapp:mywakelocktag")
 
     private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -140,7 +148,8 @@ class MainActivity : AppCompatActivity() {
             android.Manifest.permission.ACCESS_FINE_LOCATION,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.READ_CONTACTS,
-            android.Manifest.permission.READ_MEDIA_IMAGES
+            android.Manifest.permission.READ_MEDIA_IMAGES,
+            android.Manifest.permission.POST_NOTIFICATIONS
         )
     } else {
         arrayOf(
@@ -152,4 +161,21 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    class LocationService : Service() {
+        private lateinit var locationClient: LocationClient
+        private lateinit var fusedLocation: FusedLocationProviderClient
+
+        override fun onBind(p0: Intent?): IBinder? {
+            return null
+        }
+
+        override fun onCreate() {
+            super.onCreate()
+            locationClient = DefaultLocationClient(
+                applicationContext,
+                LocationServices.getFusedLocationProviderClient(applicationContext)
+            )
+            fusedLocation = LocationServices.getFusedLocationProviderClient(applicationContext)
+        }
+    }
 }
