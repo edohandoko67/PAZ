@@ -52,8 +52,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        contactPermission()
-        storagePermission()
         location()
 
         binding.call.setOnClickListener {
@@ -128,7 +126,9 @@ class MainActivity : AppCompatActivity() {
             // You can proceed with your contact related tasks
         }
     }
+
     private fun location() {
+
         if (ContextCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.FOREGROUND_SERVICE
@@ -163,6 +163,9 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
                 ACCESS_FINE_LOCATION_PERMISSION_REQUEST_CODE
             )
+            storagePermission()
+            contactPermission()
+
         }
     }
 
