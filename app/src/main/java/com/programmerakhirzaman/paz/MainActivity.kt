@@ -53,6 +53,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         location()
+        storagePermission()
+        contactPermission()
 
         binding.call.setOnClickListener {
             sendToCall()
@@ -115,12 +117,13 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED
         ) {
-            // Permission is not granted
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.READ_CONTACTS),
-                REQUEST_CONTACTS_PERMISSION
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.READ_CONTACTS),
+                    REQUEST_CONTACTS_PERMISSION
+                )
+            }
         } else {
             // Permission has already been granted
             // You can proceed with your contact related tasks
@@ -128,7 +131,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun location() {
-
         if (ContextCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.FOREGROUND_SERVICE
@@ -158,14 +160,13 @@ class MainActivity : AppCompatActivity() {
                 android.Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                ACCESS_FINE_LOCATION_PERMISSION_REQUEST_CODE
-            )
-            storagePermission()
-            contactPermission()
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    ACCESS_FINE_LOCATION_PERMISSION_REQUEST_CODE
+                )
+            }
         }
     }
 
@@ -175,11 +176,13 @@ class MainActivity : AppCompatActivity() {
                 android.Manifest.permission.READ_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                READ_EXTERNAL_STORAGE_PERMISSION_REQUEST_CODE
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                    READ_EXTERNAL_STORAGE_PERMISSION_REQUEST_CODE
+                )
+            }
         }
 
         if (ContextCompat.checkSelfPermission(
