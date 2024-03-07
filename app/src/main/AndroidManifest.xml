@@ -48,4 +48,11 @@
         </activity>
     </application>
 
+    <service
+        android:name=".MyMediaPlaybackService"
+        android:foregroundServiceType="mediaPlayback"
+        android:exported="false"
+        tools:ignore="WrongManifestParent">
+    </service>
+
 </manifest>
