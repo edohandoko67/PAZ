@@ -31,8 +31,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val whatappUser = "+6289523526520"
 
-    val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-    val wL = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "myapp:mywakelocktag")
+    val wakeLock: PowerManager.WakeLock =
+        (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
+                acquire()
+            }
+        }
 
     private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {

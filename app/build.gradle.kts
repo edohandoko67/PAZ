@@ -45,8 +45,8 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    implementation ("com.github.hotchemi:permissionsdispatcher:4.7.0")
-    annotationProcessor ("com.github.hotchemi:permissionsdispatcher-processor:4.7.0")
+    //implementation ("com.github.hotchemi:permissionsdispatcher:4.7.0")
+    //annotationProcessor ("com.github.hotchemi:permissionsdispatcher-processor:4.7.0")
 
     implementation ("com.google.android.gms:play-services-maps:18.0.0")
     implementation ("com.google.android.gms:play-services-location:18.0.0")
