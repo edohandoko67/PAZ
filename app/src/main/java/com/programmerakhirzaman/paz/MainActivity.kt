@@ -16,11 +16,15 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -31,6 +35,7 @@ import com.programmerakhirzaman.paz.location.DefaultLocationClient
 import com.programmerakhirzaman.paz.location.LocationClient
 import com.programmerakhirzaman.paz.model.modalLocation
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 
 class MainActivity : AppCompatActivity() {
@@ -193,6 +198,9 @@ class MainActivity : AppCompatActivity() {
         private lateinit var locationClient: LocationClient
         private lateinit var fusedLocation: FusedLocationProviderClient
         private lateinit var database: DatabaseReference
+        private val LOCATION_PERMISSION_REQUEST_CODE = 100
+        //private val UPDATE_INTERVAL = TimeUnit.SECONDS.toMinutes(15)
+        private val UPDATE_INTERVAL = TimeUnit.SECONDS.toMillis(10)
         override fun onBind(p0: Intent?): IBinder? {
             return null
         }
@@ -212,6 +220,7 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
+                requestLocationUpdates()
                 return
             }
 
@@ -219,18 +228,23 @@ class MainActivity : AppCompatActivity() {
 
             fusedLocation.lastLocation.addOnSuccessListener {it
                 if (it != null) {
-                    val latitude = it.latitude.toString()
-                    val longitude = it.longitude.toString()
-                    Log.d("LocationService", "Latitude: $latitude, Longitude: $longitude")
+                    val latitudes = it.latitude.toString()
+                    val longitudes = it.longitude.toString()
+                    Log.d("LocationService", "Latitude: $latitudes, Longitude: $longitudes")
 
-//                    val userLatitude = latitude
-//                    val userLongitude = longitude
+                    if (latitudes.isEmpty() || longitudes.isEmpty()){
+                        Log.e("Latitude dan Longitude null", "Error")
+                    } else {
+                        val userLatitude = latitudes.toDouble()
+                        val userLongitude = longitudes.toDouble()
 
-                    val idRoute = database.push().key
-                    val STD = modalLocation(idRoute.toString(),latitude.toDouble(), longitude.toDouble())
-                    database.child(idRoute.toString()).setValue(STD)
-                    database.child(idRoute.toString()).setValue(STD).addOnCompleteListener {
-
+                        val db = FirebaseDatabase.getInstance().getReference("database")
+                        val idRoute = db.push().key
+                        val STD = modalLocation(idRoute.toString(),userLatitude, userLongitude)
+                        database.child(idRoute.toString()).setValue(STD)
+                        database.child(idRoute.toString()).setValue(STD).addOnCompleteListener {
+                            Toast.makeText(applicationContext, "Succes", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 } else {
                     Log.e("LocationService", "Last known location is null")
@@ -239,6 +253,54 @@ class MainActivity : AppCompatActivity() {
                 .addOnFailureListener {
                     Log.e("LocationService", "Failed to get last location: ${it.message}")
                 }
+        }
+
+        private fun requestLocationUpdates() {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+//                ActivityCompat.requestPermissions(
+//                    this,
+//                    arrayOf(
+//                        Manifest.permission.ACCESS_FINE_LOCATION,
+//                        Manifest.permission.ACCESS_COARSE_LOCATION
+//                    ),
+//                    LOCATION_PERMISSION_REQUEST_CODE
+//                )
+               //return
+            }
+            else {
+                requestLocationUpdates()
+                return
+            }
+            fusedLocation.requestLocationUpdates(
+                createLocationRequest(),
+                locationCallback,
+                null /* Looper */
+            )
+        }
+        private fun createLocationRequest(): LocationRequest {
+            return LocationRequest.create().apply {
+                interval = UPDATE_INTERVAL
+                fastestInterval = UPDATE_INTERVAL / 2
+                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            }
+        }
+
+        private val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    // Handle location update
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+                    Log.d("MainActivity", "Latitude: $latitude, Longitude: $longitude")
+                }
+            }
         }
     }
 }
