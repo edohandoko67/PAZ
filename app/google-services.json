@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "771666073846",
+    "firebase_url": "https://fir-b44bd-default-rtdb.firebaseio.com",
+    "project_id": "fir-b44bd",
+    "storage_bucket": "fir-b44bd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:771666073846:android:cb89d7fa2f27c495e5b4d7",
+        "android_client_info": {
+          "package_name": "com.example.firebaseappss"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "771666073846-n8hr05f36384knsa9dvlnddps0trl7rk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD49JEWzRbmWRgkSdwX1Uhv_ZauSMPr4xs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "771666073846-n8hr05f36384knsa9dvlnddps0trl7rk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:771666073846:android:8f66082f52c9e87ce5b4d7",
+        "android_client_info": {
+          "package_name": "com.programmerakhirzaman.paz"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "771666073846-n8hr05f36384knsa9dvlnddps0trl7rk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD49JEWzRbmWRgkSdwX1Uhv_ZauSMPr4xs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "771666073846-n8hr05f36384knsa9dvlnddps0trl7rk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -46,14 +46,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    </application>
 
-<!--    <service-->
-<!--        android:name=".MyMediaPlaybackService"-->
-<!--        android:foregroundServiceType="mediaPlayback"-->
-<!--        android:exported="false"-->
-<!--        tools:ignore="WrongManifestParent">-->
-<!--    </service>-->
+        <service
+            android:name=".MainActivity$LocationService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false">
+        </service>
+    </application>
 
     <queries>
         <package android:name="com.miui.securitycenter" />
