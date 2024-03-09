@@ -1,7 +1,9 @@
 package com.programmerakhirzaman.paz
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.app.DatePickerDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -14,8 +16,10 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.PowerManager.WakeLock
 import android.provider.Settings
 import android.util.Log
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
@@ -26,8 +30,11 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.programmerakhirzaman.paz.activity.WebActivity
 import com.programmerakhirzaman.paz.activity.WebView
 import com.programmerakhirzaman.paz.databinding.ActivityMainBinding
@@ -35,20 +42,19 @@ import com.programmerakhirzaman.paz.location.DefaultLocationClient
 import com.programmerakhirzaman.paz.location.LocationClient
 import com.programmerakhirzaman.paz.model.modalLocation
 import java.net.URLEncoder
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.days
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val whatappUser = "+6289523526520"
     private lateinit var database: DatabaseReference
-
-//    val wakeLock: PowerManager.WakeLock =
-//        (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-//            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
-//                acquire()
-//            }
-//        }
+    private lateinit var wakeLock: PowerManager.WakeLock
 
     private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -72,16 +78,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
 
         checkPermissions()
-
         Intent(this, LocationService::class.java).also {
             startService(it)
         }
+
+        val powerManager: PowerManager.WakeLock =
+            (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
+                    acquire()
+                }
+            }
 
         binding.call.setOnClickListener {
             sendToCall()
@@ -126,6 +138,13 @@ class MainActivity : AppCompatActivity() {
         database = FirebaseDatabase.getInstance().reference
 
 
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::wakeLock.isInitialized && wakeLock.isHeld) {
+            wakeLock.release()
+        }
     }
 
 
@@ -200,6 +219,9 @@ class MainActivity : AppCompatActivity() {
         private lateinit var database: DatabaseReference
         private val LOCATION_PERMISSION_REQUEST_CODE = 100
         private val UPDATE_INTERVAL = TimeUnit.SECONDS.toMillis(10)
+        private var updateCount = 0
+        private lateinit var wakeLock: PowerManager.WakeLock
+
 
         override fun onBind(intent: Intent?): IBinder? {
             return null
@@ -214,6 +236,22 @@ class MainActivity : AppCompatActivity() {
             fusedLocation = LocationServices.getFusedLocationProviderClient(applicationContext)
             database = FirebaseDatabase.getInstance().reference
             requestLocationUpdates()
+
+            val powerManager: PowerManager.WakeLock =
+                (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+                    newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
+                        acquire()
+                    }
+                }
+        }
+
+        override fun onDestroy() {
+            super.onDestroy()
+            // Panggil removeLocationUpdates saat layanan dihentikan
+            fusedLocation.removeLocationUpdates(locationCallback)
+            if (::wakeLock.isInitialized && wakeLock.isHeld) {
+                wakeLock.release()
+            }
         }
 
         private fun requestLocationUpdates() {
@@ -250,6 +288,11 @@ class MainActivity : AppCompatActivity() {
                     val longitude = location.longitude
                     Log.d("LocationService", "Latitude: $latitude, Longitude: $longitude")
                     saveLocationToDatabase(latitude, longitude)
+                    updateCount++
+                    if ( updateCount == 3) {
+                        deleteLocationFromDatabase()
+                        updateCount = 0
+                    }
                 }
             }
         }
@@ -257,7 +300,10 @@ class MainActivity : AppCompatActivity() {
         private fun saveLocationToDatabase(latitude: Double, longitude: Double) {
             val idRoute = database.push().key
             if (idRoute != null) {
-                val std = modalLocation(idRoute, latitude, longitude)
+                val currentDate = Date()
+                val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+                val formatterDate = formatter.format(currentDate)
+                val std = modalLocation(idRoute, latitude, longitude, formatterDate)
                 database.child(idRoute).setValue(std)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
@@ -273,6 +319,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        private fun deleteLocationFromDatabase() {
+            if (updateCount >= 3) {
+                val query = database.orderByKey().limitToFirst(3)
+                query.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        for (dataSnapshot in snapshot.children) {
+                            val key = dataSnapshot.key
+                            if (key != null) {
+                                database.child(key).removeValue()
+                            }
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("LocationService", "Failed to delete location: ${error.message}")
+                    }
+
+                })
+                // Reset hitungan pembaruan
+                updateCount = 0
+            }
+        }
     }
 }
 
