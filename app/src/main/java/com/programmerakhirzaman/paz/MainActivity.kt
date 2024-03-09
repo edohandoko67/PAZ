@@ -126,7 +126,6 @@ class MainActivity : AppCompatActivity() {
         database = FirebaseDatabase.getInstance().reference
 
 
-
     }
 
 
@@ -194,6 +193,90 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+
+    class LocationService : Service() {
+        private lateinit var locationClient: LocationClient
+        private lateinit var fusedLocation: FusedLocationProviderClient
+        private lateinit var database: DatabaseReference
+        private val LOCATION_PERMISSION_REQUEST_CODE = 100
+        private val UPDATE_INTERVAL = TimeUnit.SECONDS.toMillis(10)
+
+        override fun onBind(intent: Intent?): IBinder? {
+            return null
+        }
+
+        override fun onCreate() {
+            super.onCreate()
+            locationClient = DefaultLocationClient(
+                applicationContext,
+                LocationServices.getFusedLocationProviderClient(applicationContext)
+            )
+            fusedLocation = LocationServices.getFusedLocationProviderClient(applicationContext)
+            database = FirebaseDatabase.getInstance().reference
+            requestLocationUpdates()
+        }
+
+        private fun requestLocationUpdates() {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+
+            fusedLocation.requestLocationUpdates(
+                createLocationRequest(),
+                locationCallback,
+                null /* Looper */
+            )
+        }
+
+        private fun createLocationRequest(): LocationRequest {
+            return LocationRequest.create().apply {
+                interval = UPDATE_INTERVAL
+                fastestInterval = UPDATE_INTERVAL / 2
+                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            }
+        }
+
+        private val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+                    Log.d("LocationService", "Latitude: $latitude, Longitude: $longitude")
+                    saveLocationToDatabase(latitude, longitude)
+                }
+            }
+        }
+
+        private fun saveLocationToDatabase(latitude: Double, longitude: Double) {
+            val idRoute = database.push().key
+            if (idRoute != null) {
+                val std = modalLocation(idRoute, latitude, longitude)
+                database.child(idRoute).setValue(std)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            //Toast.makeText(applicationContext, "Success", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Log.e("LocationService", "Failed to save location: ${task.exception}")
+                            Toast.makeText(applicationContext, "Failed to save location", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            } else {
+                Log.e("LocationService", "Failed to generate key for location")
+                Toast.makeText(applicationContext, "Failed to generate key for location", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    }
+}
+
+/*
     class LocationService : Service() {
         private lateinit var locationClient: LocationClient
         private lateinit var fusedLocation: FusedLocationProviderClient
@@ -303,4 +386,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-}
+} */
