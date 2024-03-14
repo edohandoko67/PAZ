@@ -12,6 +12,8 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
         binding.loginRl.visibility = View.VISIBLE
         binding.signupRl.visibility = View.GONE
@@ -19,15 +21,15 @@ class LoginActivity : AppCompatActivity() {
         binding.loginTxt.setOnClickListener {
             binding.loginTxt.setTextColor(Color.parseColor("#8FE1A6"))
             binding.signupTxt.setTextColor(Color.parseColor("#CBCBCB"))
-            binding.signupRl.visibility = View.VISIBLE
-            binding.loginRl.visibility = View.GONE
+            binding.signupRl.visibility = View.GONE
+            binding.loginRl.visibility = View.VISIBLE
         }
 
         binding.signupTxt.setOnClickListener {
             binding.signupTxt.setTextColor(Color.parseColor("#8FE1A6"))
             binding.loginTxt.setTextColor(Color.parseColor("#CBCBCB"))
-            binding.loginRl.visibility = View.VISIBLE
-            binding.signupRl.visibility = View.GONE
+            binding.loginRl.visibility = View.GONE
+            binding.signupRl.visibility = View.VISIBLE
         }
     }
 

@@ -15,6 +15,8 @@ class SplashScreen : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySplashScreenBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
         CoroutineScope(Dispatchers.Main).launch {
             delay(4000L)
