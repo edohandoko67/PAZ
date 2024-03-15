@@ -37,6 +37,8 @@ class LoginActivity : AppCompatActivity() {
         binding.loginRl.visibility = View.VISIBLE
         binding.signupRl.visibility = View.GONE
 
+        auth = FirebaseAuth.getInstance()
+
         binding.btnRegister.setOnClickListener {
             registerUser()
         }
@@ -71,89 +73,146 @@ class LoginActivity : AppCompatActivity() {
         } else if (email.isEmpty()) {
             binding.emailRegisET.error = "Isi field email!"
             return
+        } else if (!isEmailValid(email)) {
+            binding.emailRegisET.error = "Format email tidak valid!"
+            return
         } else if (password.isEmpty() || password.length < 8) {
             binding.passwordRegisEt.error = "Isi field password, password tidak kurang dari 8"
             return
         }
 
-        auth = FirebaseAuth.getInstance()
+        val auth = FirebaseAuth.getInstance()
         auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        val user = auth.currentUser
-                        Toast.makeText(
-                            this,
-                            "Berhasil registrasi",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        startActivity(Intent(this@LoginActivity, LoginActivity::class.java))
-                        finish()
-                    }
-                    else {
-                        // If registration fails, display a message to the user.
-                        Log.w(TAG, "createUserWithEmail:failure", it.exception)
-                        Toast.makeText(
-                            baseContext, "Gagal registrasi: ${it.exception?.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val user = auth.currentUser
+                    Toast.makeText(
+                        this,
+                        "Berhasil registrasi",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    startActivity(Intent(this@LoginActivity, LoginActivity::class.java))
+                    finish()
                 }
+                else {
+                    Log.w(TAG, "createUserWithEmail:failure", it.exception)
+                    Toast.makeText(
+                        baseContext, "Gagal registrasi: ${it.exception?.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+    }
+
+    private fun isEmailValid(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
     private fun loginUser() {
         val email = binding.emailET.text.toString()
         val pass = binding.passwordET.text.toString()
+
         if (email.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, "Isi field tersebut", Toast.LENGTH_SHORT).show()
-        } else {
-            FirebaseDatabase.getInstance().getReference("/session/login").orderByChild("email")
-                .equalTo(email)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        if (snapshot.exists()) {
-                            for (data in snapshot.children) {
-                                val level = snapshot.child("level").value.toString()
-                                val status = snapshot.child("status").value.toString()
-                                val sharedPref = SharePref(this@LoginActivity)
-                                if (status == "1") {
-                                    if (level == "admin") {
-                                        sharedPref.setSessionNIK("user", email)
-                                        sharedPref.setSessionString(key_level, level)
+            return
+        }
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                else {
+                    Log.w(TAG, "signInWithEmail:failure", it.exception)
+                    Toast.makeText(baseContext, "Auth failed", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
+
+    companion object {
+        private const val TAG = "LoginActivity"
+    }
+
+    /*private fun loginUser() {
+        val email = binding.emailET.text.toString()
+        val pass = binding.passwordET.text.toString()
+
+        if (email.isEmpty() || pass.isEmpty()) {
+            Toast.makeText(this, "Isi field tersebut", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val auth = FirebaseAuth.getInstance()
+
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    val userEmail = user?.email
+
+                    val firestore = FirebaseFirestore.getInstance()
+                    val usersCollection = firestore.collection("users")
+
+                    if (userEmail != null) {
+                        usersCollection.document(userEmail)
+                            .get()
+                            .addOnSuccessListener { document ->
+                                if (document.exists()) {
+                                    val status = document.getString("status")
+                                    if (status == "1") {
+                                        // Login berhasil dan status aktif
+                                        val level = document.getString("level")
+                                        val sharedPref = SharePref(this@LoginActivity)
+                                        sharedPref.setSessionNIK("user", userEmail)
+                                        level?.let { sharedPref.setSessionString(key_level, it) }
                                         val intent = Intent(this@LoginActivity, MainActivity::class.java)
                                         startActivity(intent)
                                         finish()
+                                    } else {
+                                        // Status pengguna tidak aktif
+                                        Toast.makeText(
+                                            this@LoginActivity,
+                                            "Akun tidak aktif",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
-                                    else {
-                                        sharedPref.setSessionNIK("user", email)
-                                        sharedPref.setSessionString(key_level, level)
-                                        val intent =
-                                            Intent(this@LoginActivity, MainActivity::class.java)
-                                        //intent.putExtra("username", username_ET.text.toString())
-                                        startActivity(intent)
-                                        finish()
-                                    }
-                                }
-                                else {
+                                } else {
+                                    // Data pengguna tidak ditemukan di Firestore
                                     Toast.makeText(
                                         this@LoginActivity,
                                         "Data tidak ditemukan",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
-                               }
                             }
-                        }
-                    override fun onCancelled(error: DatabaseError) {
-                        Log.e("LoginActivity", "Database error: ${error.message}")
+                            .addOnFailureListener { e ->
+                                Log.e("LoginActivity", "Error retrieving user data: ${e.message}")
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    "Terjadi kesalahan saat login",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                    } else {
+                        // Email pengguna null
                         Toast.makeText(
                             this@LoginActivity,
-                            "Terjadi kesalahan saat login",
+                            "Email pengguna tidak tersedia",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
+                } else {
+                    // Login gagal, tampilkan pesan kesalahan
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Gagal login: ${task.exception?.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+    } */
 
-                })
-        }
-    }
+
 
 }
