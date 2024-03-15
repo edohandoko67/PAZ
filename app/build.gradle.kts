@@ -54,6 +54,10 @@ dependencies {
     implementation("com.google.firebase:firebase-database:20.3.1")
     implementation ("com.google.firebase:firebase-analytics:20.0.2")
     implementation ("com.airbnb.android:lottie:3.7.0")
+    implementation ("com.google.firebase:firebase-auth:21.0.1")
+    implementation("com.google.firebase:firebase-firestore-ktx:24.10.3")
+    implementation("com.google.android.gms:play-services-cast-framework:21.4.0")
+
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
